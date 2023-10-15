@@ -1,0 +1,1 @@
+podman machine rm podman-machine-default
