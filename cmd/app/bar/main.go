@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"html"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -81,6 +82,18 @@ func newHTTPHandler() http.Handler {
 
 	// Register handlers.
 	handleFunc("/bar", func(w http.ResponseWriter, r *http.Request) {
+		resp, err := http.Get("http://foo:8080/foo")
+		if err != nil {
+			fmt.Println(err)
+		}
+		defer resp.Body.Close()
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println("-------------------------------------")
+		fmt.Println(string(body))
+		fmt.Println("-------------------------------------")
 		fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
 	})
 
