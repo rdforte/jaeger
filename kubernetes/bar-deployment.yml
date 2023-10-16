@@ -16,7 +16,7 @@ spec:
         app: bar
     spec:
       containers:
-      - image: localhost:5000/bar
+      - image: bar
         name: bar
         ports:
         - containerPort: 8080
