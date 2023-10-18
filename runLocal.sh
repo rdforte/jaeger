@@ -1,9 +1,12 @@
 #!/bin/bash
 
-minikube start
+minikube start --cpus=2 --memory=4g
 
 kubectl create -f kubernetes/observability-namespace.yml
 kubectl create -f kubernetes/cert-manager.yml
+
+kubectl create -f kubernetes/elastic-crds.yml
+kubectl create -f kubernetes/elastic-operator.yml
 
 webhookReady=false
 checkCount=0

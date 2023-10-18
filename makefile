@@ -1,5 +1,5 @@
 start:
-	minikube start && tilt up
+	./runLocal.sh
 
 stop:
 	minikube delete --all
