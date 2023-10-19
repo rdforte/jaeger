@@ -24,6 +24,17 @@ curl localhost:8080/bar
 ```
 This will send a message to the bar service which will then send a message to the foo service.
 
+## Accessing Jaeger UI
+enable minikube ingress:
+```text
+minikube addons enable ingress
+```
+create network tunnel:
+```text
+minikube tunnel
+```
+### open [Jaeger UI](http://localhost/search)
+
 ## Common Issues
 #### Jaeger Operator Timeout
 Deploying the jaeger operator takes a bit of time to deploy, and sometimes it times out trying to find the volume to mount. If after
