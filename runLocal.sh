@@ -36,7 +36,7 @@ do
   checkCount=$(($checkCount + 1))
   echo "checking cert manager webhook -> $checkCount times"
   sleep 3
-  maxWatchCount=20
+  maxWatchCount=25
   provision_resource_check_exceed_limit $maxWatchCount $checkCount
 done
 
@@ -74,7 +74,7 @@ do
   echo "checking elastic search running -> $checkCount times"
   sleep 3
   es=$( kubectl get pod quickstart-es-default-0 -o jsonpath="{.status.phase}")
-  maxWatchCount=20
+  maxWatchCount=30
   provision_resource_check_exceed_limit $maxWatchCount $checkCount
 done
 
