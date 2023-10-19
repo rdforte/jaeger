@@ -50,5 +50,10 @@ echo "----------------------------------"
 echo "jaeger operator ready"
 echo "----------------------------------"
 
+kubectl apply -f kubernetes/elasticsearch.yml
+kubectl create secret generic jaeger-secret --from-literal=ES_USERNAME=elastic --from-literal=ES_PASSWORD=$(kubectl get secret quickstart-es-elastic-user -o go-template='{{.data.elastic | base64decode}}')
+
+#kubectl apply -f kubernetes/jaeger-tracing.yml
+
 tilt up
 

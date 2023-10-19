@@ -1,0 +1,25 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: selfsigned-issuer
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: quickstart-es-cert
+spec:
+  isCA: true
+  dnsNames:
+    - quickstart-es-http
+    - quickstart-es-http.default.svc
+    - quickstart-es-http.default.svc.cluster.local
+  issuerRef:
+    kind: Issuer
+    name: selfsigned-issuer
+  secretName: quickstart-es-cert
+  subject:
+    organizations:
+      - quickstart
