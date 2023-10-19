@@ -14,6 +14,15 @@ To delete the cluster and all its resources run:
 make stop
 ```
 
+To monitor **foo** and **bar** services click `Spacebar` in terminal or open [Tilt Desktop](http://localhost:10350/).
+You will be able to see traces exported by OpenTelemetry as well as some custom logs from foo and bar services.
+
+To send a message to the **bar service**:
+```text
+curl localhost:8080/bar
+```
+This will send a message to the bar service which will then send a message to the foo service.
+
 ## Common Issues
 #### Jaeger Operator Timeout
 Deploying the jaeger operator takes a bit of time to deploy, and sometimes it times out trying to find the volume to mount. If after
