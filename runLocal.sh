@@ -1,5 +1,26 @@
 #!/bin/bash
 
+function provision_resource_check_exceed_limit() {
+  maxWatchCount=$1
+  currentWatchCount=$2
+  if [ -z $currentWatchCount -o -z $maxWatchCount ]
+  then
+    return
+  fi
+
+  if [ $currentWatchCount -ge $maxWatchCount ]
+  then
+    make stop
+    echo "----------------------------------"
+    echo "----------------------------------"
+    echo "Provisioning services timed out."
+    echo "Please retry."
+    echo "----------------------------------"
+    echo "----------------------------------"
+    exit 1
+  fi
+}
+
 minikube start --cpus=2 --memory=4g
 
 kubectl create -f kubernetes/observability-namespace.yml
@@ -15,6 +36,8 @@ do
   checkCount=$(($checkCount + 1))
   echo "checking cert manager webhook -> $checkCount times"
   sleep 3
+  maxWatchCount=20
+  provision_resource_check_exceed_limit $maxWatchCount $checkCount
 done
 
 echo "----------------------------------"
@@ -31,7 +54,8 @@ do
   echo "checking jaeger operator -> $checkCount times"
   sleep 3
 
-  restart_run_local $checkCount
+  maxWatchCount=30
+  provision_resource_check_exceed_limit $maxWatchCount $checkCount
 done
 
 echo "----------------------------------"
@@ -50,6 +74,8 @@ do
   echo "checking elastic search running -> $checkCount times"
   sleep 3
   es=$( kubectl get pod quickstart-es-default-0 -o jsonpath="{.status.phase}")
+  maxWatchCount=20
+  provision_resource_check_exceed_limit $maxWatchCount $checkCount
 done
 
 echo "----------------------------------"
@@ -60,20 +86,4 @@ kubectl apply -f kubernetes/jaeger-tracing.yml
 
 tilt up
 
-# HELPERS
-
-function restart_run_local() {
-  retryCount=5
-  if [ -z $1 ]
-  then
-    return
-  fi
-
-  if [ $1 -ge $retryCount]
-  then
-    make stop
-    exit 1
-    make start
-  fi
-}
 
