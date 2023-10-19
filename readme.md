@@ -1,8 +1,9 @@
 # POC for Jaeger
 ## Getting Started
-1. install [Docker Desktop](https://www.docker.com/products/docker-desktop/). Used for building images
-2. install [Minikube](https://minikube.sigs.k8s.io/docs/start/). Used for running local K8s cluster
-3. install [Tilt](https://tilt.dev). Used for hot reloading foo and bar services.
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/). Used for building images
+2. Install [Minikube](https://minikube.sigs.k8s.io/docs/start/). Used for running local K8s cluster
+3. Install [Tilt](https://tilt.dev). Used for hot reloading foo and bar services.
+4. Make sure you have `Make` installed on your OS. Will need this to run start/stop scripts.
 
 ## Running Project
 In the project root directory run command:
