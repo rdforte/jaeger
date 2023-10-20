@@ -10,7 +10,7 @@ spec:
       es:
         server-urls: https://quickstart-es-http.default.svc:9200
         version: 7                                  # Necessary as it doesn't work with 8 yet
-        create-index-templates: false               # Necessary as it doesn't work with 8 yet
+        index-prefix: test-prefix
         tls:
           ca: /es/certificates/ca.crt
     secretName: jaeger-secret
