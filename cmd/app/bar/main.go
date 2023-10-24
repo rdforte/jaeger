@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"go.opentelemetry.io/otel"
 	"html"
 	"io"
 	"log"
@@ -16,6 +17,8 @@ import (
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
+
+var tracer = otel.Tracer("barHandler")
 
 func main() {
 	if err := run(); err != nil {
