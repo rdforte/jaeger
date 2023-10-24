@@ -16,7 +16,6 @@ make stop
 ```
 
 To monitor **foo** and **bar** services click `Spacebar` in terminal or open [Tilt Desktop](http://localhost:10350/).
-You will be able to see traces exported by OpenTelemetry as well as some custom logs from foo and bar services.
 
 To send a message to the **bar service**:
 ```text
