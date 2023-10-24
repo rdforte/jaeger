@@ -42,3 +42,9 @@ Deploying the jaeger operator takes a bit of time to deploy, and sometimes it ti
 remainder of the resources and stop the cluster. You will need to rerun `make start`.
 
 
+#### ElasticSearch (ES) v8 Support
+Jaeger currently does not support v8 of ElasticSearch, so we have to use v7 of ES.
+[Github ElasticSearch 8.x support PR](https://github.com/jaegertracing/jaeger/issues/3571)
+
+
+
