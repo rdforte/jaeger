@@ -43,7 +43,7 @@ func SetupOTelSDK(ctx context.Context, serviceName, serviceVersion string) (shut
 	}
 
 	// Setup trace provider.
-	tracerProvider, err := newTraceProvider(ctx, res)
+	tracerProvider, err := NewTraceProvider(ctx, res)
 	if err != nil {
 		handleErr(err)
 		return
@@ -62,7 +62,7 @@ func newResource(serviceName, serviceVersion string) (*resource.Resource, error)
 		))
 }
 
-func newTraceProvider(ctx context.Context, res *resource.Resource) (*trace.TracerProvider, error) {
+func NewTraceProvider(ctx context.Context, res *resource.Resource) (*trace.TracerProvider, error) {
 	endpointOption := otlptracehttp.WithEndpoint(fmt.Sprintf("%s:%d", "simple-prod-collector", 4318)) // add as env var
 	withInsecure := otlptracehttp.WithInsecure()
 	traceExporter, err := otlptracehttp.New(ctx, endpointOption, withInsecure)
