@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/propagation"
 	"google.golang.org/grpc"
@@ -66,6 +65,8 @@ func initProvider(ctx context.Context) (func(context.Context) error, error) {
 
 	// Register the trace exporter with a TracerProvider, using a batch
 	// span processor to aggregate spans before export.
+	// For the demonstration, use sdktrace.AlwaysSample sampler to sample all traces.
+	// In a production application, use sdktrace.ProbabilitySampler with a desired probability.
 	bsp := sdktrace.NewBatchSpanProcessor(traceExporter)
 	tracerProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
@@ -74,9 +75,6 @@ func initProvider(ctx context.Context) (func(context.Context) error, error) {
 	)
 	otel.SetTracerProvider(tracerProvider)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-
-	// set global propagator to tracecontext (the default is no-op).
-	otel.SetTextMapPropagator(propagation.TraceContext{})
 
 	// Shutdown will flush any remaining spans and shut down the exporter.
 	return tracerProvider.Shutdown, nil
@@ -115,25 +113,24 @@ func main() {
 func newHTTPHandler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/bar", func(w http.ResponseWriter, r *http.Request) {
-		bag, _ := baggage.Parse("username=donuts")
-		ctx := baggage.ContextWithBaggage(context.Background(), bag) // TODO try with request context
-		// Attributes represent additional key-value descriptors that can be bound
-		// to a metric observer or recorder.
-		commonAttrs := []attribute.KeyValue{
-			attribute.String("attrA", "chocolate"),
-			attribute.String("attrB", "raspberry"),
-			attribute.String("attrC", "vanilla"),
+		m, err := baggage.NewMember("clientID", "donuts")
+		if err != nil {
+			fmt.Println(err)
 		}
+		bag, err := baggage.New(m)
+		baggageCtx := baggage.ContextWithBaggage(r.Context(), bag)
 
 		// work begins
 		ctx, span := tracer.Start(
-			ctx,
+			baggageCtx,
 			"CollectorExporter-Example-BAR",
-			trace.WithAttributes(commonAttrs...))
+			trace.WithAttributes(semconv.PeerService("foo-service")))
 		defer span.End()
 
-		req, err := http.NewRequest(http.MethodGet, "http://foo:8080/foo", nil)
-		req.WithContext(ctx)
+		bagX := baggage.FromContext(ctx)
+		fmt.Println("BAG", bagX)
+
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://foo:8080/foo", nil)
 		if err != nil {
 			fmt.Println(err)
 		}

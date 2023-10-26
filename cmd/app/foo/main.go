@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"html"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -28,9 +29,7 @@ var tracer trace.Tracer
 
 // Initializes an OTLP exporter, and configures the corresponding trace and
 // metric providers.
-func initProvider() (func(context.Context) error, error) {
-	ctx := context.Background()
-
+func initProvider(ctx context.Context) (func(context.Context) error, error) {
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
 			// the service name used to display traces in backends
@@ -65,6 +64,8 @@ func initProvider() (func(context.Context) error, error) {
 
 	// Register the trace exporter with a TracerProvider, using a batch
 	// span processor to aggregate spans before export.
+	// For the demonstration, use sdktrace.AlwaysSample sampler to sample all traces.
+	// In a production application, use sdktrace.ProbabilitySampler with a desired probability.
 	bsp := sdktrace.NewBatchSpanProcessor(traceExporter)
 	tracerProvider := sdktrace.NewTracerProvider(
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
@@ -73,9 +74,6 @@ func initProvider() (func(context.Context) error, error) {
 	)
 	otel.SetTracerProvider(tracerProvider)
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-
-	// set global propagator to tracecontext (the default is no-op).
-	otel.SetTextMapPropagator(propagation.TraceContext{})
 
 	// Shutdown will flush any remaining spans and shut down the exporter.
 	return tracerProvider.Shutdown, nil
@@ -87,7 +85,7 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
-	shutdown, err := initProvider()
+	shutdown, err := initProvider(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -100,6 +98,7 @@ func main() {
 	tracer = otel.Tracer("foo-tracer")
 	// Start HTTP server.
 	srv := &http.Server{
+		BaseContext:  func(net.Listener) context.Context { return ctx },
 		Addr:         ":8080",
 		ReadTimeout:  time.Second,
 		WriteTimeout: 10 * time.Second,
@@ -113,12 +112,14 @@ func newHTTPHandler() http.Handler {
 	mux := http.NewServeMux()
 
 	fooHandler := func(w http.ResponseWriter, r *http.Request) {
-		uk := attribute.Key("username")
+		uk := attribute.Key("clientID")
 		ctx := r.Context()
 		span := trace.SpanFromContext(ctx)
 		fmt.Println("SPAN", span)
 		bag := baggage.FromContext(ctx)
-		span.AddEvent("handling this...", trace.WithAttributes(uk.String(bag.Member("username").Value())))
+		fmt.Println("BAG", bag)
+		span.AddEvent("handling this...", trace.WithAttributes(uk.String(bag.Member("clientID").Value())))
+		span.SetName("CollectorExporter-Example-BAR")
 		fmt.Println("Hit")
 		fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
 	}
