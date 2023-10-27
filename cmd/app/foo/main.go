@@ -1,51 +1,18 @@
 package main
 
 import (
-	"Tracing/internal/tracing"
-	"context"
+	"Tracing/internal/server"
 	"fmt"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/baggage"
-	"html"
-	"log"
-	"net/http"
-	"os"
-	"os/signal"
-	"time"
-
 	"go.opentelemetry.io/otel/trace"
+	"html"
+	"net/http"
 )
 
-var tracer trace.Tracer
-
 func main() {
-	log.Printf("Waiting for connection...")
-
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer cancel()
-
-	shutdown, err := tracing.InitTracing(ctx, "foo-service")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer func() {
-		if err := shutdown(ctx); err != nil {
-			log.Fatal("failed to shutdown TracerProvider: %w", err)
-		}
-	}()
-
-	tracer = otel.Tracer("foo-tracer")
-	// Start HTTP server.
-	srv := &http.Server{
-		Addr:         ":8080",
-		ReadTimeout:  time.Second,
-		WriteTimeout: 10 * time.Second,
-		Handler:      newHTTPHandler(),
-	}
-
-	log.Fatal(srv.ListenAndServe())
+	server.RunServer("foo-service", newHTTPHandler())
 }
 
 func newHTTPHandler() http.Handler {
