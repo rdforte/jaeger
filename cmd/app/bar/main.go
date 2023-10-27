@@ -10,6 +10,8 @@ import (
 	"net/http"
 )
 
+// TODO - all otel/tracing logic should be part of middleware and hidden away from main handler logic
+
 func main() {
 	server.RunServer("bar-service", newHTTPHandler())
 }
