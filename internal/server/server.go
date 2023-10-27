@@ -3,6 +3,7 @@ package server
 import (
 	"Tracing/internal/tracing"
 	"context"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -11,10 +12,10 @@ import (
 	"time"
 )
 
-func RunServer(serviceName string, handler http.Handler) {
+func RunServer(serviceName string, handler http.Handler) error {
 	log.Printf("Waiting for connection...")
 	// Handle SIGINT (CTRL+C) gracefully.
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer stop()
 
 	shutdown, err := tracing.InitTracing(ctx, serviceName)
@@ -45,14 +46,20 @@ func RunServer(serviceName string, handler http.Handler) {
 	select {
 	case err = <-srvErr:
 		// Error when starting HTTP server.
-		return
+		return fmt.Errorf("server error: %w", err)
 	case <-ctx.Done():
+		// give the server 10 seconds to shut down gracefully. Allows for load shedding.
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*10))
+		defer cancel()
+
+		if err := srv.Shutdown(ctx); err != nil {
+			srv.Close()
+			return fmt.Errorf("could not stop server gracefully: %w", err)
+		}
 		// Wait for first CTRL+C.
 		// Stop receiving signal notifications as soon as possible.
 		stop()
 	}
 
-	// When Shutdown is called, ListenAndServe immediately returns ErrServerClosed.
-	err = srv.Shutdown(context.Background())
-	return
+	return nil
 }

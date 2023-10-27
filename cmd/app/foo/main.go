@@ -9,10 +9,14 @@ import (
 	"go.opentelemetry.io/otel/trace"
 	"html"
 	"net/http"
+	"os"
 )
 
 func main() {
-	server.RunServer("foo-service", newHTTPHandler())
+	if err := server.RunServer("foo-service", newHTTPHandler()); err != nil {
+		fmt.Printf("foo service error %v", err)
+		os.Exit(1)
+	}
 }
 
 func newHTTPHandler() http.Handler {
