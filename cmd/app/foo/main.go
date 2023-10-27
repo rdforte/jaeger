@@ -12,7 +12,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"html"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -98,7 +97,6 @@ func main() {
 	tracer = otel.Tracer("foo-tracer")
 	// Start HTTP server.
 	srv := &http.Server{
-		BaseContext:  func(net.Listener) context.Context { return ctx },
 		Addr:         ":8080",
 		ReadTimeout:  time.Second,
 		WriteTimeout: 10 * time.Second,
@@ -115,15 +113,12 @@ func newHTTPHandler() http.Handler {
 		uk := attribute.Key("clientID")
 		ctx := r.Context()
 		span := trace.SpanFromContext(ctx)
-		fmt.Println("SPAN", span)
 		bag := baggage.FromContext(ctx)
-		fmt.Println("BAG", bag)
-		span.AddEvent("handling this...", trace.WithAttributes(uk.String(bag.Member("clientID").Value())))
-		span.SetName("CollectorExporter-Example-BAR")
-		fmt.Println("Hit")
-		fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
+		span.AddEvent("clientID", trace.WithAttributes(uk.String(bag.Member("clientID").Value())))
+		span.SetName("foo-handler")
+		fmt.Fprintf(w, "Hello got your baggage: [ %v ]. FROM: %q", bag, html.EscapeString(r.URL.Path))
 	}
-	otelHandler := otelhttp.NewHandler(http.HandlerFunc(fooHandler), "foo")
+	otelHandler := otelhttp.NewHandler(http.HandlerFunc(fooHandler), "foo-handler")
 
 	mux.Handle("/foo", otelHandler)
 

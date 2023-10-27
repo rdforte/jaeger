@@ -11,7 +11,6 @@ import (
 	"html"
 	"io"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -100,7 +99,6 @@ func main() {
 
 	// Start HTTP server.
 	srv := &http.Server{
-		BaseContext:  func(net.Listener) context.Context { return ctx },
 		Addr:         ":8080",
 		ReadTimeout:  time.Second,
 		WriteTimeout: 10 * time.Second,
@@ -112,23 +110,13 @@ func main() {
 
 func newHTTPHandler() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/bar", func(w http.ResponseWriter, r *http.Request) {
+	barHandler := func(w http.ResponseWriter, r *http.Request) {
 		m, err := baggage.NewMember("clientID", "donuts")
 		if err != nil {
 			fmt.Println(err)
 		}
 		bag, err := baggage.New(m)
-		baggageCtx := baggage.ContextWithBaggage(r.Context(), bag)
-
-		// work begins
-		ctx, span := tracer.Start(
-			baggageCtx,
-			"CollectorExporter-Example-BAR",
-			trace.WithAttributes(semconv.PeerService("foo-service")))
-		defer span.End()
-
-		bagX := baggage.FromContext(ctx)
-		fmt.Println("BAG", bagX)
+		ctx := baggage.ContextWithBaggage(r.Context(), bag)
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://foo:8080/foo", nil)
 		if err != nil {
@@ -144,11 +132,15 @@ func newHTTPHandler() http.Handler {
 		if err != nil {
 			fmt.Println(err)
 		}
+
 		fmt.Println("-------------------------------------")
 		fmt.Println(string(body))
 		fmt.Println("-------------------------------------")
 		fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
-	})
+	}
+	otelHandler := otelhttp.NewHandler(http.HandlerFunc(barHandler), "bar-handler")
+
+	mux.Handle("/bar", otelHandler)
 
 	return mux
 }
